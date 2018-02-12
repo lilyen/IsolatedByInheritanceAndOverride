@@ -11,6 +11,7 @@ namespace IsolatedByInheritanceAndOverride
     public class OrderService
     {
         private string _filePath = @"C:\temp\testOrders.csv";
+        private IDao _bookDao;
 
         public void SyncBookOrders()
         {
@@ -19,14 +20,20 @@ namespace IsolatedByInheritanceAndOverride
             // only get orders of book
             var ordersOfBook = orders.Where(x => x.Type == "Book");
 
-            var bookDao = new BookDao();
+            _bookDao = GetBookDao();
+
             foreach (var order in ordersOfBook)
             {
-                bookDao.Insert(order);
+                _bookDao.Insert(order);
             }
         }
 
-        private List<Order> GetOrders()
+        protected virtual IDao GetBookDao()
+        {
+            return new BookDao();
+        }
+
+        protected virtual List<Order> GetOrders()
         {
             // parse csv file to get orders
             var result = new List<Order>();
@@ -69,6 +76,11 @@ namespace IsolatedByInheritanceAndOverride
         }
     }
 
+    public interface IDao
+    {
+        void Insert(Order order);
+    }
+
     public class Order
     {
         public string Type { get; set; }
@@ -80,9 +92,9 @@ namespace IsolatedByInheritanceAndOverride
         public string CustomerName { get; set; }
     }
 
-    public class BookDao
+    public class BookDao : IDao
     {
-        internal void Insert(Order order)
+        public void Insert(Order order)
         {
             // directly depend on some web service
             //var client = new HttpClient();

@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NSubstitute;
 
 namespace IsolatedByInheritanceAndOverride.Test
 {
@@ -63,9 +64,49 @@ namespace IsolatedByInheritanceAndOverride.Test
         public void Test_SyncBookOrders_3_Orders_Only_2_book_order()
         {
             // hard to isolate dependency to unit test
+            var FakeOrdeerService = new FakeOrderService();
+            FakeOrdeerService.SetOrders(new List<Order>()
+            {
+                new Order(){Type = "Book"},
+                new Order(){Type = "CD"},
+                new Order(){Type = "Book"}
+            });
+
+            var FakeBookDao = Substitute.For<IDao>();
+
+            FakeOrdeerService.SetBookDao(FakeBookDao);
+            FakeOrdeerService.SyncBookOrders();
+
+            FakeBookDao.Received(2).Insert(Arg.Is<Order>(x=>x.Type == "Book"));
 
             //var target = new OrderService();
             //target.SyncBookOrders();
+        }
+    }
+
+    internal class FakeOrderService : OrderService
+    {
+        private IDao _BookDao;
+        private List<Order> _orders;
+
+        protected override List<Order> GetOrders()
+        {
+            return _orders;
+        }
+
+        public void SetOrders(List<Order> orders)
+        {
+            _orders = orders;
+        }
+
+        public void SetBookDao(IDao Dao)
+        {
+            _BookDao = Dao;
+        }
+
+        protected override IDao GetBookDao()
+        {
+            return _BookDao;
         }
     }
 }
